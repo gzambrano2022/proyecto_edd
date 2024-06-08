@@ -4,6 +4,8 @@
 #include <queue>
 #include <vector>
 
+//códigos sacados de https://github.com/Fatima-Mujahid/huffman-coding/blob/main/HuffmanCoding.cpp (GITHUB) 
+
 struct Nodo{
     char caracter;
     int frecuencia;
