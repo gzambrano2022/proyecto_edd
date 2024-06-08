@@ -24,6 +24,7 @@ class HuffmanCoder{
         std::unordered_map<char, int> frecuencias;
         std::unordered_map<char, std::string> codigos;
         std::unordered_map<std::string, char> decodigos;
+        Nodo* arbol;
 
         void contar_frecuencias(const std::string& texto){
             frecuencias.clear(); // Limpiar frecuencias anteriores
@@ -80,11 +81,20 @@ class HuffmanCoder{
         }
 
     public:
-        HuffmanCoder(){}
+        HuffmanCoder(): arbol(nullptr){}
+
+        ~HuffmanCoder(){
+            if (arbol){
+                liberar_arbol(arbol);
+            }
+        }
 
         std::string codificar(const std::string& texto){
             contar_frecuencias(texto);
-            Nodo* arbol = construir_arbol();
+            if(arbol){
+                liberar_arbol(arbol);
+            }
+            arbol = construir_arbol();
             codigos.clear();
             decodigos.clear();
             generar_codigos(arbol, "");
@@ -94,7 +104,6 @@ class HuffmanCoder{
                 codigo += codigos[c];
             }
 
-            liberar_arbol(arbol);
             return codigo;
         }
 
@@ -113,15 +122,14 @@ class HuffmanCoder{
         }
 
         void mostrar_frecuencias(){
-            std::cout << "Frecuencias de los caracteres:" << std::endl;
             for(auto& pair : frecuencias){
-                std::cout << "caracter: " << pair.first << " frecuencia: " << pair.second << std::endl;
+                std::cout << "caracter: " << pair.first << "(" << pair.second << ")" <<std::endl;
             }
         }
 };
 
 int main(){
-    std::string texto = "comere";
+    std::string texto = "alabar_al_alabarda";
     HuffmanCoder huffman;
 
     std::string codigo = huffman.codificar(texto);
