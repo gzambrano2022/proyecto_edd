@@ -3,6 +3,7 @@
 #include <string>
 #include <queue>
 #include <vector>
+#include <fstream>
 
 struct Nodo{
     char caracter;
@@ -118,6 +119,26 @@ class HuffmanCoder{
                 std::cout << "caracter: " << pair.first << " frecuencia: " << pair.second << std::endl;
             }
         }
+        double obtener_peso_archivo(const std::string& filename) {
+        std::ifstream file(filename, std::ios::binary | std::ios::ate);
+        if (!file.is_open()) {
+            std::cerr << "No se puede abrir el archivo: " << filename << std::endl;
+            return 0.0;
+        }
+        std::streamsize size = file.tellg();
+        file.close();
+        return size / 1000.0; // tamaño en kilobytes
+    }
+
+    void escribir_a_archivo(const std::string& filename, const std::string& texto) {
+        std::ofstream file(filename);
+        if (file.is_open()) {
+            file << texto;
+            file.close();
+        } else {
+            std::cerr << "No se puede abrir el archivo para escribir: " << filename << std::endl;
+        }
+    }
 };
 
 int main(){
@@ -131,4 +152,16 @@ int main(){
     std::cout << "Texto original: " << texto << std::endl;
     std::cout << "Texto codificado: " << codigo << std::endl;
     std::cout << "Texto decodificado: " << texto_decodificado << std::endl;
+
+    huffman.escribir_a_archivo("texto_original.txt", texto);
+    huffman.escribir_a_archivo("texto_codificado.txt", codigo);
+    huffman.escribir_a_archivo("texto_decodificado.txt", texto_decodificado);
+
+    double peso_original = huffman.obtener_peso_archivo("texto_original.txt");
+    double peso_codificado = huffman.obtener_peso_archivo("texto_codificado.txt");
+    double peso_decodificado = huffman.obtener_peso_archivo("texto_decodificado.txt");
+
+    std::cout << "Peso del texto original (en kilobytes): " << peso_original << " KB" << std::endl;
+    std::cout << "Peso del texto codificado (en kilobytes): " << peso_codificado << " KB" << std::endl;
+    std::cout << "Peso del texto decodificado (en kilobytes): " << peso_decodificado << " KB" << std::endl;
 }
