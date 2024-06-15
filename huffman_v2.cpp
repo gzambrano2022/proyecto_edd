@@ -130,7 +130,27 @@ class HuffmanCoder{
             for(auto& pair : frecuencias){
                 std::cout << "caracter: " << pair.first << "(" << pair.second << ")" <<std::endl;
             }
+            std::cout << std::endl;
         }
+         double obtener_peso_archivo(const std::string& filename) {
+        std::ifstream file(filename, std::ios::binary | std::ios::ate);
+        if (!file.is_open()) {
+            std::cerr << "No se puede abrir el archivo: " << filename << std::endl;
+            return 0.0;
+        }
+        std::streamsize size = file.tellg();
+        file.close();
+        return size / 1000.0; // tamaño en kilobytes
+    }
+    void escribir_a_archivo(const std::string& filename, const std::string& texto) {
+        std::ofstream file(filename);
+        if (file.is_open()) {
+            file << texto;
+            file.close();
+        } else {
+            std::cerr << "No se puede abrir el archivo para escribir: " << filename << std::endl;
+        }
+    }
 };
 
 int main(){
@@ -158,11 +178,29 @@ int main(){
     auto fin_decod = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duracion_decod = fin_decod - inicio_decod;
 
+    //Imprime el texto en todas sus versiones
+    std::cout << "Textos: " << std::endl;
+    std::cout << "Texto original: " << texto << std::endl;
+    std::cout << "Texto codificado: " << codigo << std::endl;
+    std::cout << "Texto decodificado: " << texto_decodificado << std::endl <<std::endl;
 
-    //std::cout << "Texto original: " << texto << std::endl;
-    //std::cout << "Texto codificado: " << codigo << std::endl;
-    //std::cout << "Texto decodificado: " << texto_decodificado << std::endl;
+    //Transforma la version codificada y decodificada en archivos txt
+    huffman.escribir_a_archivo("texto_codificado.txt", codigo);
+    huffman.escribir_a_archivo("texto_decodificado.txt", texto_decodificado);
 
+    //calcula los pesos de los archivos txt
+    double peso_original = huffman.obtener_peso_archivo("test.txt");
+    double peso_codificado = huffman.obtener_peso_archivo("texto_codificado.txt");
+    double peso_decodificado = huffman.obtener_peso_archivo("texto_decodificado.txt");
+
+    //Imprime los pesos de los textos
+    std::cout << "Tamanos: " << std::endl;
+    std::cout << "Peso del texto original (en kilobytes): " << peso_original << " KB" << std::endl;
+    std::cout << "Peso del texto codificado (en kilobytes): " << peso_codificado << " KB" << std::endl;
+    std::cout << "Peso del texto decodificado (en kilobytes): " << peso_decodificado << " KB" << std::endl << std::endl;
+
+    //Tiempos de compilación
+    std::cout << "Tiempos: " << std::endl;
     std::cout << "Tiempo de codificacion: " << duracion_cod.count() << std::endl;
     std::cout << "Tiempo de decodificacion: " << duracion_decod.count() << std::endl;
 }
