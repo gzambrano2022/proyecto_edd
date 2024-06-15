@@ -3,8 +3,11 @@
 #include <string>
 #include <queue>
 #include <vector>
+#include <fstream>
+#include <iterator>
+#include <chrono>
 
-//códigos sacados de https://github.com/Fatima-Mujahid/huffman-coding/blob/main/HuffmanCoding.cpp (GITHUB) 
+//código sacados de https://github.com/Fatima-Mujahid/huffman-coding/blob/main/HuffmanCoding.cpp 
 
 struct Nodo{
     char caracter;
@@ -131,14 +134,35 @@ class HuffmanCoder{
 };
 
 int main(){
-    std::string texto = "alabar_al_alabarda";
+    std::ifstream archivo("test.txt");
+    if(!archivo.is_open()){
+        std::cout << "No se pudo abrir el archivo." << std::endl;
+        return 1;
+    }
+
+    std::string texto((std::istreambuf_iterator<char>(archivo)), std::istreambuf_iterator<char>());
+    archivo.close();
+
+
     HuffmanCoder huffman;
 
+    auto inicio_cod = std::chrono::high_resolution_clock::now();
     std::string codigo = huffman.codificar(texto);
-    huffman.mostrar_frecuencias();
+    auto fin_cod = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duracion_cod = fin_cod - inicio_cod;
 
+    //huffman.mostrar_frecuencias();
+
+    auto inicio_decod = std::chrono::high_resolution_clock::now();
     std::string texto_decodificado = huffman.decodificar(codigo);
-    std::cout << "Texto original: " << texto << std::endl;
-    std::cout << "Texto codificado: " << codigo << std::endl;
-    std::cout << "Texto decodificado: " << texto_decodificado << std::endl;
+    auto fin_decod = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duracion_decod = fin_decod - inicio_decod;
+
+
+    //std::cout << "Texto original: " << texto << std::endl;
+    //std::cout << "Texto codificado: " << codigo << std::endl;
+    //std::cout << "Texto decodificado: " << texto_decodificado << std::endl;
+
+    std::cout << "Tiempo de codificacion: " << duracion_cod.count() << std::endl;
+    std::cout << "Tiempo de decodificacion: " << duracion_decod.count() << std::endl;
 }
