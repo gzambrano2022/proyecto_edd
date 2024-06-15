@@ -77,7 +77,7 @@ std::vector<std::pair<std::string, int>> compress(const std::string& input) {
 }
 
 int main() {
-    std::string input = "tangananica-tanganana";
+    std::string input = "mecorro";
     auto compressed = compress(input);
 
     std::cout << "Compressed output: \n";
