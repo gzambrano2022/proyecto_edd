@@ -162,7 +162,7 @@ public:
 
 
 int main() {
-    //Abrir el archivo
+    // Abrir el archivo
     std::ifstream archivo("test.txt");
     if(!archivo.is_open()){
         std::cout << "No se pudo abrir el archivo." << std::endl;
