@@ -234,10 +234,10 @@ int main(){
     std::chrono::duration<double> duracion_decod = fin_decod - inicio_decod;
 
     //Imprime el texto en todas sus versiones
-    std::cout << "Textos: " << std::endl;
-    std::cout << "Texto original: " << texto << std::endl;
-    std::cout << "Texto codificado: " << codigo << std::endl;
-    std::cout << "Texto decodificado: " << texto_decodificado << std::endl <<std::endl;
+    //std::cout << "Textos: " << std::endl;
+    //std::cout << "Texto original: " << texto << std::endl;
+    //std::cout << "Texto codificado: " << codigo << std::endl;
+    //std::cout << "Texto decodificado: " << texto_decodificado << std::endl <<std::endl;
 
     //Transforma la version codificada y decodificada en archivos txt
     huffman.escribir_a_archivo("texto_codificado.txt", codigo);
