@@ -177,7 +177,7 @@ int main() {
     Trie trie; //Instancia de Trie
 
     //Medir tiempo de compresión
-    std::cout << "Texto original: " << texto << std::endl;
+    //std::cout << "Texto original: " << texto << std::endl;
     auto inicio_com = std::chrono::high_resolution_clock::now();
     auto compressed = trie.compress(texto);
     auto fin_com = std::chrono::high_resolution_clock::now();
@@ -189,7 +189,7 @@ int main() {
 
     std::cout << "Compressed output: ";
     for (const auto& p : compressed) {
-        std::cout << "(" << p.first << "," << p.second << ") ";
+        //std::cout << "(" << p.first << "," << p.second << ") ";
         texto_comprimido_ss << "(" << p.first << "," << p.second << ") ";
     }
     std::cout << std::endl;
