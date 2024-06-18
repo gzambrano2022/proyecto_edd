@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iterator>
 #include <chrono>
+#include <bitset>
 
 //código sacados de https://github.com/Fatima-Mujahid/huffman-coding/blob/main/HuffmanCoding.cpp 
 
@@ -170,6 +171,27 @@ class HuffmanCoder{
             std::cout << std::endl;
         }
 
+        void escribir_bits_a_archivo(const std::string& filename, const std::string& texto_codificado) {
+            std::ofstream file(filename, std::ios::binary); // Abre un archivo para escritura en modo binario
+
+            // Verifica si el archivo se abrió correctamente
+            if (file.is_open()) {
+                size_t n = texto_codificado.size();
+                file.write(reinterpret_cast<const char*>(&n), sizeof(n)); // Guardar el tamaño del texto codificado
+                std::bitset<8> bits; // Declara un conjunto de bits de 8 bits (1 byte)
+                for (size_t i = 0; i < texto_codificado.size(); ++i) {
+                    bits[i % 8] = texto_codificado[i] == '1'; // Asigna el bit correspondiente en el conjunto de bits
+                    if (i % 8 == 7 || i == texto_codificado.size() - 1) {
+                        file.put(static_cast<unsigned char>(bits.to_ulong())); // Escribe el byte completo al archivo
+                        bits.reset(); // Resetea el conjunto de bits para el siguiente byte
+                    }
+                }
+                file.close(); // Cierra el archivo
+            } else {
+                std::cerr << "No se puede abrir el archivo para escribir: " << filename << std::endl;
+            }
+        }
+
         // Método para obtener el tamaño del archivo en KB
         double obtener_peso_archivo(const std::string& filename) {
 
@@ -240,12 +262,13 @@ int main(){
     //std::cout << "Texto decodificado: " << texto_decodificado << std::endl <<std::endl;
 
     //Transforma la version codificada y decodificada en archivos txt
+    huffman.escribir_bits_a_archivo("texto_codificado.bin", codigo);
     huffman.escribir_a_archivo("texto_codificado.txt", codigo);
     huffman.escribir_a_archivo("texto_decodificado.txt", texto_decodificado);
 
     //calcula los pesos de los archivos txt
     double peso_original = huffman.obtener_peso_archivo("test.txt");
-    double peso_codificado = huffman.obtener_peso_archivo("texto_codificado.txt");
+    double peso_codificado = huffman.obtener_peso_archivo("texto_codificado.bin");
     double peso_decodificado = huffman.obtener_peso_archivo("texto_decodificado.txt");
 
     //Imprime los pesos de los textos
