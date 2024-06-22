@@ -262,14 +262,14 @@ int main(){
     //std::cout << "Texto decodificado: " << texto_decodificado << std::endl <<std::endl;
 
     //Transforma la version codificada y decodificada en archivos txt
-    huffman.escribir_bits_a_archivo("texto_codificado.bin", codigo);
-    huffman.escribir_a_archivo("texto_codificado.txt", codigo);
-    huffman.escribir_a_archivo("texto_decodificado.txt", texto_decodificado);
+    huffman.escribir_bits_a_archivo("results/texto_codificado.bin", codigo);
+    huffman.escribir_a_archivo("results/texto_codificado.txt", codigo);
+    huffman.escribir_a_archivo("results/texto_decodificado.txt", texto_decodificado);
 
-    //calcula los pesos de los archivos txt
+    //Calcula los pesos de los archivos txt
     double peso_original = huffman.obtener_peso_archivo("test.txt");
-    double peso_codificado = huffman.obtener_peso_archivo("texto_codificado.bin");
-    double peso_decodificado = huffman.obtener_peso_archivo("texto_decodificado.txt");
+    double peso_codificado = huffman.obtener_peso_archivo("results/texto_codificado.bin");
+    double peso_decodificado = huffman.obtener_peso_archivo("results/texto_decodificado.txt");
 
     //Imprime los pesos de los textos
     std::cout << "Tamanos: " << std::endl;
