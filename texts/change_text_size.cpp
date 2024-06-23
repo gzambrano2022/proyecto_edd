@@ -38,9 +38,9 @@ void adjustFileSize(const std::string& inputFilePath, const std::string& outputF
 }
 
 int main() {
-    std::string inputFile = "dna50Mb.txt";
-    std::string outputFile = "output.txt";
-    std::size_t targetSize = 20; // target size in MB
+    std::string inputFile = "proteins50MB.txt";
+    std::string outputFile = "proteins1MB.txt";
+    std::size_t targetSize = 1; // target size in MB
 
     adjustFileSize(inputFile, outputFile, targetSize);
 
