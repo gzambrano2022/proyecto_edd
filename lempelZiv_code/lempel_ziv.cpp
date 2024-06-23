@@ -1,20 +1,20 @@
+/* Algoritmo optimizado, ahora se usa unordered_map, inserción de datos al árbol O(n) (Algoritmo de Ukkonen) y mejor manejo de memoria */
 #include <iostream>
-#include <vector>
-#include <string>
 #include <fstream>
-#include <chrono>
 #include <sstream>
+#include <vector>
+#include <chrono>
+#include <string>
+#include <unordered_map>
 
 // Estructura de Nodo para árbol de sufijos compacto
 struct SuffixNode {
     int start;  // Índice de inicio del sufijo
-    int end;    // Índice de fin del sufijo
-    int depth;  // Profundidad del nodo en el árbol
-    SuffixNode* parent;
-    std::vector<SuffixNode*> children;
+    int* end;    // Índice de fin del sufijo
+    int suffixIndex;  // Índice del sufijo en el texto original
+    std::unordered_map<char, SuffixNode*> children;
 
-    SuffixNode(int start, int end, int depth, SuffixNode* parent)
-        : start(start), end(end), depth(depth), parent(parent) {}
+    SuffixNode(int start, int* end) : start(start), end(end), suffixIndex(-1) {}
 };
 
 // Clase que implementa el árbol de sufijos compacto
@@ -22,66 +22,70 @@ class SuffixTree {
 private:
     SuffixNode* root;  // Nodo raíz del árbol
     std::string input; // Texto original
+    int* leafEnd;
 
-    // Construir el árbol de sufijos compacto
+    // Construir el árbol de sufijos compacto usando el algoritmo de Ukkonen
     void buildSuffixTree(const std::string& input) {
-        root = new SuffixNode(-1, -1, 0, nullptr);
-        int n = input.size();
-        std::vector<SuffixNode*> nodes(n);
+        this->input = input;
+        leafEnd = new int(-1);
+        root = new SuffixNode(-1, new int(-1));
+        int size = input.size();
 
-        // Insertar cada sufijo en el árbol
-        for (int i = 0; i < n; ++i) {
-            insertSuffix(input, i, root, nodes);
+        for (int i = 0; i < size; i++) {
+            extendSuffixTree(i);
         }
     }
 
-    // Insertar un sufijo en el árbol
-    void insertSuffix(const std::string& input, int start, SuffixNode* current, std::vector<SuffixNode*>& nodes) {
-        int n = input.size();
-        SuffixNode* parent = current;
+    // Extender el árbol de sufijos con el siguiente sufijo
+    void extendSuffixTree(int pos) {
+        static SuffixNode* activeNode = root; // Nodo activo
+        static int activeEdge = -1; // Borde activo
+        static int activeLength = 0; // Longitud activa
 
-        while (true) {
-            SuffixNode* child = nullptr;
+        leafEnd = new int(pos);
+        int remainingSuffixCount = 0;
 
-            // Buscar el hijo correspondiente
-            for (auto* ch : parent->children) {
-                if (input[ch->start] == input[start]) {
-                    child = ch;
+        // Extender con el siguiente carácter
+        while (remainingSuffixCount <= pos) {
+            if (activeLength == 0) {
+                activeEdge = pos;
+            }
+
+            if (activeNode->children.find(input[activeEdge]) == activeNode->children.end()) {
+                // Crear un nuevo nodo hoja
+                activeNode->children[input[activeEdge]] = new SuffixNode(pos, leafEnd);
+
+                if (activeNode != root) {
+                    activeNode = root;
+                }
+            } else {
+                SuffixNode* next = activeNode->children[input[activeEdge]];
+                int edgeLength = *next->end - next->start + 1;
+
+                if (activeLength >= edgeLength) {
+                    activeEdge += edgeLength;
+                    activeLength -= edgeLength;
+                    activeNode = next;
+                    continue;
+                }
+
+                if (input[next->start + activeLength] == input[pos]) {
+                    activeLength++;
                     break;
                 }
-            }
 
-            if (child == nullptr) {
-                // Si no hay coincidencia, crear un nuevo nodo
-                SuffixNode* leaf = new SuffixNode(start, n - 1, n - start, parent);
-                nodes.push_back(leaf);
-                parent->children.push_back(leaf);
-                return;
-            }
+                int* splitEnd = new int(next->start + activeLength - 1);
+                SuffixNode* split = new SuffixNode(next->start, splitEnd);
+                activeNode->children[input[activeEdge]] = split;
+                split->children[input[pos]] = new SuffixNode(pos, leafEnd);
+                next->start += activeLength;
+                split->children[input[next->start]] = next;
 
-            // Buscar la longitud de la coincidencia
-            int len = std::min(child->end - child->start + 1, n - start);
-            int i = child->start;
-
-            while (i <= child->end && input[i] == input[start]) {
-                ++i;
-                ++start;
+                if (activeNode != root) {
+                    activeNode = root;
+                }
             }
-
-            if (i <= child->end) {
-                // Dividir el nodo existente
-                SuffixNode* splitNode = new SuffixNode(child->start, i - 1, child->depth, parent);
-                nodes.push_back(splitNode);
-                parent->children.push_back(splitNode);
-                child->start = i;
-                child->parent = splitNode;
-                splitNode->children.push_back(child);
-                continue;
-            } else {
-                // Avanzar al siguiente nodo
-                parent = child;
-                start -= len;
-            }
+            remainingSuffixCount++;
         }
     }
 
@@ -97,9 +101,9 @@ private:
             SuffixNode* child = nullptr;
 
             // Buscar el hijo correspondiente
-            for (auto* ch : node->children) {
-                if (input[ch->start] == s[startPos]) {
-                    child = ch;
+            for (auto& [key, value] : node->children) {
+                if (input[value->start] == s[startPos]) {
+                    child = value;
                     break;
                 }
             }
@@ -114,7 +118,7 @@ private:
             int nodeStart = child->start;
 
             // Verificar la longitud de la coincidencia
-            while (nodeStart <= child->end && matchStart < n && input[nodeStart] == s[matchStart]) {
+            while (nodeStart <= *child->end && matchStart < n && input[nodeStart] == s[matchStart]) {
                 if (nodeStart != -1 && nodeStart < originalStartPos) {
                     length++;
                     pos = nodeStart - length + 1;
@@ -125,7 +129,7 @@ private:
 
             startPos = matchStart;
 
-            if (nodeStart <= child->end) {
+            if (nodeStart <= *child->end) {
                 break;
             }
         }
@@ -135,7 +139,7 @@ private:
 
 public:
     // Constructor
-    SuffixTree(const std::string& input) : input(input) {
+    SuffixTree(const std::string& input) {
         buildSuffixTree(input);
     }
 
