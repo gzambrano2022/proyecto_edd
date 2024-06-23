@@ -1,156 +1,201 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <unordered_map>
 #include <fstream>
-#include <iterator>
 #include <chrono>
 #include <sstream>
 
-//Estructura que representa un nodo del Trie
-struct TrieNode {
-    std::unordered_map<char, TrieNode*> children;
-    int firstPosition;
-    TrieNode() : firstPosition(-1) {}
+// Estructura de Nodo para árbol de sufijos compacto
+struct SuffixNode {
+    int start;  // Índice de inicio del sufijo
+    int end;    // Índice de fin del sufijo
+    int depth;  // Profundidad del nodo en el árbol
+    SuffixNode* parent;
+    std::vector<SuffixNode*> children;
+
+    SuffixNode(int start, int end, int depth, SuffixNode* parent)
+        : start(start), end(end), depth(depth), parent(parent) {}
 };
 
-//Clase que implementa el Trie
-class Trie {
+// Clase que implementa el árbol de sufijos compacto
+class SuffixTree {
 private:
-    TrieNode* root;
+    SuffixNode* root;  // Nodo raíz del árbol
+    std::string input; // Texto original
 
-    //Busca la coincidencia mas larga empezando desde starPos en el string s (en el Trie)
+    // Construir el árbol de sufijos compacto
+    void buildSuffixTree(const std::string& input) {
+        root = new SuffixNode(-1, -1, 0, nullptr);
+        int n = input.size();
+        std::vector<SuffixNode*> nodes(n);
+
+        // Insertar cada sufijo en el árbol
+        for (int i = 0; i < n; ++i) {
+            insertSuffix(input, i, root, nodes);
+        }
+    }
+
+    // Insertar un sufijo en el árbol
+    void insertSuffix(const std::string& input, int start, SuffixNode* current, std::vector<SuffixNode*>& nodes) {
+        int n = input.size();
+        SuffixNode* parent = current;
+
+        while (true) {
+            SuffixNode* child = nullptr;
+
+            // Buscar el hijo correspondiente
+            for (auto* ch : parent->children) {
+                if (input[ch->start] == input[start]) {
+                    child = ch;
+                    break;
+                }
+            }
+
+            if (child == nullptr) {
+                // Si no hay coincidencia, crear un nuevo nodo
+                SuffixNode* leaf = new SuffixNode(start, n - 1, n - start, parent);
+                nodes.push_back(leaf);
+                parent->children.push_back(leaf);
+                return;
+            }
+
+            // Buscar la longitud de la coincidencia
+            int len = std::min(child->end - child->start + 1, n - start);
+            int i = child->start;
+
+            while (i <= child->end && input[i] == input[start]) {
+                ++i;
+                ++start;
+            }
+
+            if (i <= child->end) {
+                // Dividir el nodo existente
+                SuffixNode* splitNode = new SuffixNode(child->start, i - 1, child->depth, parent);
+                nodes.push_back(splitNode);
+                parent->children.push_back(splitNode);
+                child->start = i;
+                child->parent = splitNode;
+                splitNode->children.push_back(child);
+                continue;
+            } else {
+                // Avanzar al siguiente nodo
+                parent = child;
+                start -= len;
+            }
+        }
+    }
+
+    // Método privado para buscar la coincidencia más larga en el árbol de sufijos
     std::pair<int, int> searchLongestMatch(const std::string& s, int startPos) {
-        TrieNode* node = root; //Inicializa el nodo actual como la raíz del Trie
-        int length = 0; 
-        int pos = -1; 
+        SuffixNode* node = root;
+        int length = 0;
+        int pos = -1;
+        int n = s.size();
+        int originalStartPos = startPos;
 
-        for (int i = startPos; i < s.size(); ++i) {
-            char ch = s[i];
+        while (startPos < n) {
+            SuffixNode* child = nullptr;
 
-            //Si el caracter no esta en los hijos del nodo se rompe el ciclo
-            if (node->children.find(ch) == node->children.end()) {
+            // Buscar el hijo correspondiente
+            for (auto* ch : node->children) {
+                if (input[ch->start] == s[startPos]) {
+                    child = ch;
+                    break;
+                }
+            }
+
+            if (child == nullptr) {
                 break;
             }
 
-            //Avanza al siguiente nodo
-            node = node->children[ch];
+            // Avanzar al siguiente nodo
+            node = child;
+            int matchStart = startPos;
+            int nodeStart = child->start;
 
-            //Verifica si el nodo tiene posición valida y esta antes del starPos
-            if (node->firstPosition != -1 && node->firstPosition < startPos) {
-                length = i - startPos + 1;
-                pos = node->firstPosition;
+            // Verificar la longitud de la coincidencia
+            while (nodeStart <= child->end && matchStart < n && input[nodeStart] == s[matchStart]) {
+                if (nodeStart != -1 && nodeStart < originalStartPos) {
+                    length++;
+                    pos = nodeStart - length + 1;
+                }
+                nodeStart++;
+                matchStart++;
+            }
+
+            startPos = matchStart;
+
+            if (nodeStart <= child->end) {
+                break;
             }
         }
 
-        //Retorna el par (Posición, Longitud)
         return {pos, length};
     }
 
-    //Inserta un substring empezando desde startPos (en el Trie)
-    void insert(const std::string& s, int startPos) {
-        TrieNode* node = root; //Inicializa el nodo actual como la raíz del Trie
-
-
-        for (int i = startPos; i < s.size(); ++i) {
-            char ch = s[i];
-
-            //Si el caracter no esta en los hijos del nodo crea un nuevo nodo y lo agrega como hijo de la clave ch
-            if (node->children.find(ch) == node->children.end()) {
-                node->children[ch] = new TrieNode();
-            }
-
-            //Avanza al siguiente nodo
-            node = node->children[ch];
-
-            //Registrada la posición inicial de la secuencia si es que no esta registrada 
-            if (node->firstPosition == -1) {
-                node->firstPosition = startPos;
-            }
-        }
+public:
+    // Constructor
+    SuffixTree(const std::string& input) : input(input) {
+        buildSuffixTree(input);
     }
 
-public:
-    Trie() : root(new TrieNode()) {} //Constructor de la clase
-
-    //Método que comprime empleando el algoritmo Lempel-Ziv
+    // Método para comprimir usando el algoritmo Lempel-Ziv
     std::vector<std::pair<std::string, int>> compress(const std::string& input) {
-        std::vector<std::pair<std::string, int>> output; //Vector que almacena la salida comprimida
-        int i = 0; //Ídice que recorre el string
+        std::vector<std::pair<std::string, int>> output;
+        int i = 0;
 
-        //Itera todo el string 
         while (i < input.size()) {
-            auto match = searchLongestMatch(input, i);//Busca la coincidencia mas larga a partir de la posición i del string
+            auto match = searchLongestMatch(input, i);
 
-            //Verifica si no hay coincidencia o la longitud de esta es 0
             if (match.first == -1 || match.second == 0) {
-                output.push_back({std::string(1, input[i]), 0}); //Inserta el char con longitud 0 al vector output
-                insert(input, i); //Inserta el substring a partir el índice i
+                output.push_back({std::string(1, input[i]), 0});
                 i++;
-            } 
-
-            //Si hay coincidencia
-            else {
-                output.push_back({std::to_string(match.first), match.second}); //Inserta posición y longitud 
-                insert(input, i); //Inserta el substring a partir el índice i
+            } else {
+                output.push_back({std::to_string(match.first), match.second});
                 i += match.second;
             }
         }
 
-        //Retorna el vector con la salida comprimida
         return output;
     }
 
-    //Método que descomprime 
+    // Método para descomprimir
     std::string decompress(const std::vector<std::pair<std::string, int>>& compressed) {
-        std::string decompressed;//String para el texto descomprimido
+        std::string decompressed;
 
-        //Itera sobre cada par (string,int)
         for (const auto& p : compressed) {
-
-            //Si el entero es 0 es un char individual
             if (p.second == 0) {
-                decompressed += p.first; //Agrega el char al string decompressed
-            } 
-            //Si es mayor a 0
-            else {
-                int pos = std::stoi(p.first); //Transforma el primer par (string) a entero
-                int length = p.second; //Obtiene la longitud 
+                decompressed += p.first;
+            } else {
+                int pos = std::stoi(p.first);
+                int length = p.second;
                 for (int i = 0; i < length; ++i) {
-                    decompressed += decompressed[pos + i]; //Agrega cada char al string decompressed
+                    decompressed += decompressed[pos + i];
                 }
             }
         }
 
-        //Retorna el string del texto descomprimido
         return decompressed;
     }
 
-    //Método para obtener el tamaño del archivo en KB
+    // Método para obtener el tamaño del archivo en KB
     double obtener_peso_archivo(const std::string& filename) {
-
-        // Abre el archivo en modo binario y coloca el puntero al final del archivo
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
-        // Verifica si se pudo abrir el archivo correctamente
         if (!file.is_open()) {
             std::cerr << "No se puede abrir el archivo: " << filename << std::endl;
             return 0.0;
         }
-        
-        // Obtiene el tamaño del archivo colocando el puntero al final y usando tellg()
+
         std::streamsize size = file.tellg();
         file.close();
-        return size / 1000.0; // tamaño en kilobytes
+        return size / 1000.0;
     }
 
-    //Método para hacer .txt un texto
+    // Método para escribir a archivo
     void escribir_a_archivo(const std::string& filename, const std::string& texto) {
-
-        // Abre un archivo de salida con el nombre especificado por 'filename'
         std::ofstream file(filename);
 
-        // Si el archivo se abrió correctamente y escribe el contenido del texto
         if (file.is_open()) {
             file << texto;
             file.close();
@@ -160,69 +205,52 @@ public:
     }
 };
 
-
 int main() {
-    // Abrir el archivo
     std::ifstream archivo("test.txt");
-    if(!archivo.is_open()){
+    if (!archivo.is_open()) {
         std::cout << "No se pudo abrir el archivo." << std::endl;
         return 1;
     }
 
-    //Leer el contenido en un string
     std::string texto((std::istreambuf_iterator<char>(archivo)), std::istreambuf_iterator<char>());
     archivo.close();
 
+    SuffixTree suffixTree(texto);
 
-    Trie trie; //Instancia de Trie
-
-    //Medir tiempo de compresión
-    //std::cout << "Texto original: " << texto << std::endl;
     auto inicio_com = std::chrono::high_resolution_clock::now();
-    auto compressed = trie.compress(texto);
+    auto compressed = suffixTree.compress(texto);
     auto fin_com = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duracion_com = fin_com - inicio_com;
 
-    //Instancia de string comprimida
     std::stringstream texto_comprimido_ss;
     std::string texto_comprimido;
 
-    std::cout << "Compressed output: ";
     for (const auto& p : compressed) {
-        //std::cout << "(" << p.first << "," << p.second << ") ";
         texto_comprimido_ss << "(" << p.first << "," << p.second << ") ";
     }
-    std::cout << std::endl;
 
     texto_comprimido = texto_comprimido_ss.str();
 
-    //Medir tiempo de descompresión
     auto inicio_decom = std::chrono::high_resolution_clock::now();
-    std::string decompressed = trie.decompress(compressed);
+    std::string decompressed = suffixTree.decompress(compressed);
     auto fin_decom = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duracion_decom = fin_decom - inicio_decom;
 
-    std::cout << "Decompressed output: " << decompressed;
+    suffixTree.escribir_a_archivo("texto_comprimido.txt", texto_comprimido);
+    suffixTree.escribir_a_archivo("texto_descomprimido.txt", decompressed);
 
-    //Escribir los textos de compresión y descompresión en un .txt
-    trie.escribir_a_archivo("texto_comprimido.txt", texto_comprimido);
-    trie.escribir_a_archivo("texto_descomprimido.txt", decompressed);
+    double peso_original = suffixTree.obtener_peso_archivo("test.txt");
+    double peso_comprimido = suffixTree.obtener_peso_archivo("texto_comprimido.txt");
+    double peso_descomprimido = suffixTree.obtener_peso_archivo("texto_descomprimido.txt");
 
-    //Tamaños de los textos (KB)
-    double peso_original = trie.obtener_peso_archivo("test.txt");
-    double peso_comprimido = trie.obtener_peso_archivo("texto_comprimido.txt");
-    double peso_descomprimido = trie.obtener_peso_archivo("texto_descomprimido.txt");
-
-    //Imprime los tamaños de los textos (KB)
     std::cout << "Tamanos: " << std::endl;
     std::cout << "Peso del texto original (en kilobytes): " << peso_original << " KB" << std::endl;
     std::cout << "Peso del texto comprimido (en kilobytes): " << peso_comprimido << " KB" << std::endl;
     std::cout << "Peso del texto descomprimido (en kilobytes): " << peso_descomprimido << " KB" << std::endl << std::endl;
 
-    //Imprime los tiempos de compresión y Descompresión
-    std::cout << "Tiempo: " <<  std::endl;
-    std::cout << "Tiempo de compresion: " << duracion_com.count() << std::endl;
-    std::cout << "Tiempo de decompresion: " << duracion_decom.count() << std::endl;
+    std::cout << "Tiempo: " << std::endl;
+    std::cout << "Tiempo de compresion: " << duracion_com.count() << " segundos" << std::endl;
+    std::cout << "Tiempo de decompresion: " << duracion_decom.count() << " segundos" << std::endl;
 
     return 0;
 }
