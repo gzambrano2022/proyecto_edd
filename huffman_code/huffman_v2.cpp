@@ -227,13 +227,14 @@ class HuffmanCoder{
 };
 
 int main(int argc, char const* argv[]) {
+    // Si se quiere ejecutar con un texto manualmente, comentar este bloque de código y leer el siguiente comentario
     if (argc != 2) {
         std::cerr << "Uso: " << argv[0] << " <archivo_de_entrada>" << std::endl;
         return 1;
     }
 
-    std::ifstream archivo(argv[1]);
-    std::string nombre_archivo = argv[1];
+    std::ifstream archivo(argv[1]); // archivo(test.txt) si se quiere ejecutar manualmente, se pueden escribir textos de prueba en dicho archivo
+    std::string nombre_archivo = argv[1]; // "test.txt"
     if (!archivo.is_open()) {
         std::cerr << "No se pudo abrir el archivo: " << argv[1] << std::endl;
         return 1;

@@ -7,7 +7,7 @@ ejecutable="./huffman"
 carpeta_entrada="../texts"
 
 # Archivo donde se guardarán los tiempos de ejecución
-archivo_csv="tiempos_ejecucion_huffman.csv"
+archivo_csv="tiempos_ejecucion_huffman_english.csv"
 
 # Número de ejecuciones
 num_ejecuciones=20
@@ -16,9 +16,9 @@ num_ejecuciones=20
 echo "Archivo,Tiempo_Codificacion,Tiempo_Decodificacion,Peso_Original,Peso_Codificado" > $archivo_csv
 
 # Lista de archivos en la carpeta de entrada (descomentar lo que se desee ejecutar)
-archivos=("dna1MB.txt" "dna5MB.txt" "dna10MB.txt" "dna20MB.txt" "dna50MB.txt")
+#archivos=("dna1MB.txt" "dna5MB.txt" "dna10MB.txt" "dna20MB.txt" "dna50MB.txt")
 #archivos=("proteins1MB.txt" "proteins5MB.txt" "proteins10MB.txt" "proteins20MB.txt" "proteins50MB.txt")
-#archivos=("english1MB.txt" "english5MB.txt" "english10MB.txt" "english20MB.txt" "english50MB.txt")
+archivos=("english1MB.txt" "english5MB.txt" "english10MB.txt" "english20MB.txt" "english50MB.txt")
 
 # Ejecutar el programa para cada archivo y capturar los tiempos de ejecución
 for archivo in "${archivos[@]}"
