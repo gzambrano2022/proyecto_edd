@@ -196,7 +196,7 @@ public:
         return size / 1000.0;
     }
 
-    // Método para escribir a archivo
+    // Método para escribir a archivo de texto
     void escribir_a_archivo(const std::string& filename, const std::string& texto) {
         std::ofstream file(filename);
 
@@ -207,10 +207,74 @@ public:
             std::cerr << "No se puede abrir el archivo para escribir: " << filename << std::endl;
         }
     }
+
+    // Método para escribir el archivo comprimido en formato binario
+    void escribir_a_archivo_binario(const std::string& filename, const std::vector<std::pair<std::string, int>>& compressed) {
+        std::ofstream file(filename, std::ios::binary);
+
+        if (!file.is_open()) {
+            std::cerr << "No se puede abrir el archivo para escribir: " << filename << std::endl;
+            return;
+        }
+
+        for (const auto& p : compressed) {
+            int offset = (p.second == 0) ? 0 : std::stoi(p.first);
+            int length = p.second;
+
+            file.write(reinterpret_cast<char*>(&offset), sizeof(offset));
+            file.write(reinterpret_cast<char*>(&length), sizeof(length));
+
+            if (length == 0) {
+                char literal = p.first[0];
+                file.write(&literal, sizeof(literal));
+            }
+        }
+
+        file.close();
+    }
+
+    // Método para leer el archivo comprimido en formato binario
+    std::vector<std::pair<std::string, int>> leer_de_archivo_binario(const std::string& filename) {
+        std::ifstream file(filename, std::ios::binary);
+        std::vector<std::pair<std::string, int>> compressed;
+
+        if (!file.is_open()) {
+            std::cerr << "No se puede abrir el archivo para leer: " << filename << std::endl;
+            return compressed;
+        }
+
+        while (!file.eof()) {
+            int offset;
+            int length;
+
+            file.read(reinterpret_cast<char*>(&offset), sizeof(offset));
+            file.read(reinterpret_cast<char*>(&length), sizeof(length));
+
+            if (file.eof()) break; // Para evitar leer un registro incompleto al final del archivo
+
+            if (length == 0) {
+                char literal;
+                file.read(&literal, sizeof(literal));
+                compressed.push_back({std::string(1, literal), length});
+            } else {
+                compressed.push_back({std::to_string(offset), length});
+            }
+        }
+
+        file.close();
+        return compressed;
+    }
 };
 
-int main() {
-    std::ifstream archivo("test.txt");
+int main(int argc, char const* argv[]) {
+    // Si se quiere ejecutar con un texto manualmente, comentar este bloque de código y leer el siguiente comentario
+    if (argc != 2) {
+        std::cerr << "Uso: " << argv[0] << " <archivo_de_entrada>" << std::endl;
+        return 1;
+    }    
+
+    std::string nombre_archivo = argv[1];
+    std::ifstream archivo(nombre_archivo);// archivo(test.txt) si se quiere ejecutar manualmente, se pueden escribir textos de prueba en dicho archivo
     if (!archivo.is_open()) {
         std::cout << "No se pudo abrir el archivo." << std::endl;
         return 1;
@@ -226,35 +290,28 @@ int main() {
     auto fin_com = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duracion_com = fin_com - inicio_com;
 
-    std::stringstream texto_comprimido_ss;
-    std::string texto_comprimido;
+    suffixTree.escribir_a_archivo_binario("texto_comprimido.bin", compressed);
 
-    for (const auto& p : compressed) {
-        texto_comprimido_ss << "(" << p.first << "," << p.second << ") ";
-    }
-
-    texto_comprimido = texto_comprimido_ss.str();
+    auto compressed_bin = suffixTree.leer_de_archivo_binario("texto_comprimido.bin");
 
     auto inicio_decom = std::chrono::high_resolution_clock::now();
-    std::string decompressed = suffixTree.decompress(compressed);
+    std::string decompressed = suffixTree.decompress(compressed_bin);
     auto fin_decom = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duracion_decom = fin_decom - inicio_decom;
 
-    suffixTree.escribir_a_archivo("texto_comprimido.txt", texto_comprimido);
     suffixTree.escribir_a_archivo("texto_descomprimido.txt", decompressed);
 
-    double peso_original = suffixTree.obtener_peso_archivo("test.txt");
-    double peso_comprimido = suffixTree.obtener_peso_archivo("texto_comprimido.txt");
+    double peso_original = suffixTree.obtener_peso_archivo(nombre_archivo);
+    double peso_comprimido = suffixTree.obtener_peso_archivo("texto_comprimido.bin");
     double peso_descomprimido = suffixTree.obtener_peso_archivo("texto_descomprimido.txt");
 
-    std::cout << "Tamanos: " << std::endl;
     std::cout << "Peso del texto original (en kilobytes): " << peso_original << " KB" << std::endl;
     std::cout << "Peso del texto comprimido (en kilobytes): " << peso_comprimido << " KB" << std::endl;
     std::cout << "Peso del texto descomprimido (en kilobytes): " << peso_descomprimido << " KB" << std::endl << std::endl;
 
-    std::cout << "Tiempo: " << std::endl;
     std::cout << "Tiempo de compresion: " << duracion_com.count() << " segundos" << std::endl;
     std::cout << "Tiempo de decompresion: " << duracion_decom.count() << " segundos" << std::endl;
 
     return 0;
 }
+

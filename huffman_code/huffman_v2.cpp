@@ -269,4 +269,6 @@ int main(int argc, char const* argv[]) {
     
     std::cout << "Tiempo de codificacion: " << duracion_cod.count() << std::endl;
     std::cout << "Tiempo de decodificacion: " << duracion_decod.count() << std::endl;
+
+    return 0;
 }
